@@ -57,14 +57,16 @@ def load_htautau(nrows=None):
     url = "http://mlphysics.ics.uci.edu/data/htautau/htautau.txt.gz"
     filename = os.path.join(get_data_dir(), "htautau.txt.gz")
     maybe_download(filename, url)
-    data = pd.read_csv(filename, sep='\t', nrows=nrows)
+    data = pd.read_csv(filename, sep='\t', nrows=nrows,
+        usecols=["PRI_tau_pt","PRI_tau_eta","PRI_tau_phi","PRI_lep_pt","PRI_lep_eta","PRI_lep_phi","PRI_met","PRI_met_phi"])
     return data
 
 def load_ztautau(nrows=None):
     url = "http://mlphysics.ics.uci.edu/data/htautau/ztautau.txt.gz"
     filename = os.path.join(get_data_dir(), "ztautau.txt.gz")
     maybe_download(filename, url)
-    data = pd.read_csv(filename, nrows=nrows)
+    data = pd.read_csv(filename, sep='\t', nrows=nrows,
+        usecols=["PRI_tau_pt","PRI_tau_eta","PRI_tau_phi","PRI_lep_pt","PRI_lep_eta","PRI_lep_phi","PRI_met","PRI_met_phi"])
     return data
 
 
