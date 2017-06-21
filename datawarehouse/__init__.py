@@ -7,6 +7,9 @@ __version__ = "0.1"
 __author__ = "Victor Estrade"
 
 from .higgsml import load_higgs
+from .higgstautau import load_higgstautau
+from .higgstautau import load_htautau
+from .higgstautau import load_ztautau
 from .baldi2016 import load_baldi2016_train_no_pile
 from .baldi2016 import load_baldi2016_train_pile
 from .baldi2016 import load_baldi2016_test_pile
