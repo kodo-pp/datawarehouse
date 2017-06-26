@@ -8,8 +8,7 @@ __doc__="""
 ATLAS Higgs Machine Learning Challenge 2014
 Read CERN Open Data Portal Dataset http://opendata.cern.ch/record/328
 and manipulate it
- - KaggleWeight and KaggleSet are removed
-  - Label is changd from charcter to integer 0 or 1
+ - Label is changd from charcter to integer 0 or 1
  - DetailLabel is introduced indicating subpopulations
  - systematics effect are simulated
      - bkg_weight_norm : manipulates the background weight
@@ -53,20 +52,65 @@ import numpy as np
 from .download import maybe_download
 from .download import get_data_dir
 
-def load_htautau(nrows=None):
+COLUMN_NAMES = {
+    0: 'PRI_lep_1_pt',
+    1: 'PRI_lep_1_eta',
+    2: 'PRI_lep_1_phi',
+    3: 'PRI_lep_2_pt',
+    4: 'PRI_lep_2_eta',
+    5: 'PRI_lep_2_phi',
+    6: 'PRI_met',
+    7: 'PRI_met_phi',
+    8: '8',
+    9: '9',
+    10: 'relative_MET',
+    11: 'axial_MET',
+    12: 'MMC',
+    13: 'delta_R',
+    14: 'delta_eta',
+    15: '15',
+    16: '16',
+    17: 'Pt/Pt',
+    18: 'invariant_mass_visible',
+    19: 'invariant_mass_ll',
+    20: 'delta_phi',
+    21: 'sphericity',
+    22: 'transverse_sphericity',
+    23: '23',
+    24: '24',
+    }
+
+RESTRICTED_COLUMNS = [0,1,2,3,4,5,6,7]
+
+COLUMN_RENAME_FOR_SKEWING = {
+    'PRI_lep_1_pt': 'PRI_tau_pt',
+    'PRI_lep_1_eta': 'PRI_tau_eta',
+    'PRI_lep_1_phi': 'PRI_tau_phi',
+    'PRI_lep_2_pt': 'PRI_lep_pt',
+    'PRI_lep_2_eta': 'PRI_lep_eta',
+    'PRI_lep_2_phi': 'PRI_lep_phi',
+    }
+
+def load_htautau(nrows=None, restricted_cols=True):
     url = "http://mlphysics.ics.uci.edu/data/htautau/htautau.txt.gz"
     filename = os.path.join(get_data_dir(), "htautau.txt.gz")
     maybe_download(filename, url)
-    data = pd.read_csv(filename, sep='\t', nrows=nrows,
-        usecols=["PRI_tau_pt","PRI_tau_eta","PRI_tau_phi","PRI_lep_pt","PRI_lep_eta","PRI_lep_phi","PRI_met","PRI_met_phi"])
+    if restricted_cols :
+        data = pd.read_csv(filename, sep='\t', nrows=nrows, header=None, usecols=RESTRICTED_COLUMNS)
+    else:
+        data = pd.read_csv(filename, sep='\t', nrows=nrows, header=None)
+    data.rename(columns=COLUMN_NAMES, inplace=True)
     return data
 
-def load_ztautau(nrows=None):
+def load_ztautau(nrows=None, restricted_cols=True):
     url = "http://mlphysics.ics.uci.edu/data/htautau/ztautau.txt.gz"
     filename = os.path.join(get_data_dir(), "ztautau.txt.gz")
     maybe_download(filename, url)
-    data = pd.read_csv(filename, sep='\t', nrows=nrows,
-        usecols=["PRI_tau_pt","PRI_tau_eta","PRI_tau_phi","PRI_lep_pt","PRI_lep_eta","PRI_lep_phi","PRI_met","PRI_met_phi"])
+    if restricted_cols :
+        data = pd.read_csv(filename, sep='\t', nrows=nrows, header=None, usecols=RESTRICTED_COLUMNS)
+    else:
+        data = pd.read_csv(filename, sep='\t', nrows=nrows, header=None)
+    data.rename(columns=COLUMN_NAMES, inplace=True)
     return data
 
 
@@ -79,6 +123,8 @@ def load_higgstautau():
     data_z["Weight"] = np.ones(data_z.shape[0])
     data = pd.concat([data_h, data_z])
     return data
+
+
 
 # ==================================================================================
 #  V4 Class and physic computations
@@ -401,27 +447,15 @@ def tau_energy_scale(data, systTauEnergyScale):
             - PRI_tau_pt
             - PRI_met
             - PRI_met_phi
-            - DER_deltaeta_jet_jet
-            - DER_mass_jet_jet
-            - DER_prodeta_jet_jet
-            - DER_lep_eta_centrality
             - DER_mass_transverse_met_lep
             - DER_mass_vis
             - DER_pt_h
             - DER_deltar_tau_lep
-            - DER_pt_tot
-            - DER_sum_pt
             - DER_pt_ratio_lep_tau
             - DER_met_phi_centrality
-            - DER_mass_MMC
         Round up to 3 decimals.
 
     """
-    # Keep some old values for some later computations
-    if False:
-        data["ORIG_mass_MMC"] = data["DER_mass_MMC"]
-        data["ORIG_sum_pt"] = data["DER_sum_pt"]
-
     # scale tau energy scale, arbitrary but reasonable value
     data["PRI_tau_pt"] *= systTauEnergyScale 
 
@@ -445,34 +479,7 @@ def tau_energy_scale(data, systTauEnergyScale):
     vmet.e = vmet.eWithM(0.)
     data["PRI_met"] = vmet.pt()
     data["PRI_met_phi"] = vmet.phi()
-    
-    if False:
-        # first jet if it exists
-        vj1 = V4()
-        vj1.setPtEtaPhiM(data["PRI_jet_leading_pt"].where( data["PRI_jet_num"] > 0, other=0 ),
-                             data["PRI_jet_leading_eta"].where( data["PRI_jet_num"] > 0, other=0 ),
-                             data["PRI_jet_leading_phi"].where( data["PRI_jet_num"] > 0, other=0 ),
-                             0.) # zero mass
-
-        # second jet if it exists
-        vj2=V4()
-        vj2.setPtEtaPhiM(data["PRI_jet_subleading_pt"].where( data["PRI_jet_num"] > 1, other=0 ),
-                         data["PRI_jet_subleading_eta"].where( data["PRI_jet_num"] > 1, other=0 ),
-                         data["PRI_jet_subleading_phi"].where( data["PRI_jet_num"] > 1, other=0 ),
-                         0.) # zero mass
-
-        vjsum = vj1 + vj2
-
-        data["DER_deltaeta_jet_jet"] = vj1.deltaEta(vj2).where(data["PRI_jet_num"] > 1, other=-999.0)
-        data["DER_mass_jet_jet"] = vjsum.m().where(data["PRI_jet_num"] > 1, other=-999.0)
-        data["DER_prodeta_jet_jet"] = ( vj1.eta() * vj2.eta() ).where(data["PRI_jet_num"] > 1, other=-999.0)
-
-        eta_centrality_tmp = eta_centrality(data["PRI_lep_eta"],
-                                            data["PRI_jet_leading_eta"],
-                                            data["PRI_jet_subleading_eta"])
-
-        data["DER_lep_eta_centrality"] = eta_centrality_tmp.where(data["PRI_jet_num"] > 1, other=-999.0)
-
+ 
     # compute many vector sum
     vtransverse = V4()
     vtransverse.setPtEtaPhiM(vlep.pt(), 0., vlep.phi(), 0.) # just the transverse component of the lepton
@@ -489,21 +496,10 @@ def tau_energy_scale(data, systTauEnergyScale):
 
     data["DER_deltar_tau_lep"] = vtau.deltaR(vlep)
     
-    if False:
-        vtot = vltaumet + vjsum
-        data["DER_pt_tot"] = vtot.pt()
-
-        data["DER_sum_pt"] = vlep.pt() + vtau.pt() + data["PRI_jet_all_pt"] # sum_pt is the scalar sum
-    
     data["DER_pt_ratio_lep_tau"] = vlep.pt()/vtau.pt()
 
 
     data["DER_met_phi_centrality"] = METphi_centrality(data["PRI_lep_phi"], data["PRI_tau_phi"], data["PRI_met_phi"])
-
-    # FIXME do not really recompute MMC, apply a simple scaling, better than nothing (but not MET dependence)
-    if False:
-        rescaled_mass_MMC = data["ORIG_mass_MMC"] * data["DER_sum_pt"] / data["ORIG_sum_pt"]
-        data["DER_mass_MMC"] = data["ORIG_mass_MMC"].where(data["ORIG_mass_MMC"] < 0, other=rescaled_mass_MMC)
 
     # delete non trivial objects to save memory (useful?)
     # del vtau, vlep, vmet, vlmet, vltau, vltaumet
@@ -511,23 +507,6 @@ def tau_energy_scale(data, systTauEnergyScale):
     # Fix precision to 3 decimals
     DECIMALS = 3
     
-    if False:
-        data["DER_mass_MMC"] = data["DER_mass_MMC"].round(decimals=DECIMALS)
-        data["DER_deltaeta_jet_jet"] = data["DER_deltaeta_jet_jet"].round(decimals=DECIMALS)
-        data["DER_mass_jet_jet"] = data["DER_mass_jet_jet"].round(decimals=DECIMALS)
-        data["DER_prodeta_jet_jet"] = data["DER_prodeta_jet_jet"].round(decimals=DECIMALS)
-        data["DER_pt_tot"] = data["DER_pt_tot"].round(decimals=DECIMALS)
-        data["DER_sum_pt"] = data["DER_sum_pt"].round(decimals=DECIMALS)
-        data["DER_lep_eta_centrality"] = data["DER_lep_eta_centrality"].round(decimals=DECIMALS)
-        data["PRI_met_sumet"] = data["PRI_met_sumet"].round(decimals=DECIMALS)
-        data["PRI_jet_leading_pt"] = data["PRI_jet_leading_pt"].round(decimals=DECIMALS)
-        data["PRI_jet_leading_eta"] = data["PRI_jet_leading_eta"].round(decimals=DECIMALS)
-        data["PRI_jet_leading_phi"] = data["PRI_jet_leading_phi"].round(decimals=DECIMALS)
-        data["PRI_jet_subleading_pt"] = data["PRI_jet_subleading_pt"].round(decimals=DECIMALS)
-        data["PRI_jet_subleading_eta"] = data["PRI_jet_subleading_eta"].round(decimals=DECIMALS)
-        data["PRI_jet_subleading_phi"] = data["PRI_jet_subleading_phi"].round(decimals=DECIMALS)
-        data["PRI_jet_all_pt"] = data["PRI_jet_all_pt"].round(decimals=DECIMALS)
-
     data["PRI_tau_pt"] = data["PRI_tau_pt"].round(decimals=DECIMALS)
     data["PRI_tau_eta"] = data["PRI_tau_eta"].round(decimals=DECIMALS)
     data["PRI_tau_phi"] = data["PRI_tau_phi"].round(decimals=DECIMALS)
