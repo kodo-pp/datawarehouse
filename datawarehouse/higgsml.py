@@ -39,8 +39,11 @@ Modification Dec 2016 (V. Estrade):
 
 Refactor March 2017 (V. Estrade):
 - Split load function (cleaner)
+
+July 06 2017 (V. Estrade):
+- Add normalization_weight function
 """
-__version__ = "3.5"
+__version__ = "3.6"
 __author__ = "David Rousseau, and Victor Estrade "
 
 import sys
@@ -60,6 +63,17 @@ def load_higgs():
     data = pd.read_csv(filename)
     return data
 
+def normalize_weight(W, y):
+    """Normalize the given weight to assert that the luminosity is the same as the nominal.
+    Returns the normalized weight vector/Series"""
+    background_luminosity = 410999.84732187376
+    signal_luminosity = 691.9886077135781
+    background_weight_sum = W[y==0].sum()
+    signal_weight_sum = W[y==1].sum()
+    W_new = W.copy()
+    W_new[y==0] = W[y==0] * ( background_luminosity / background_weight_sum )
+    W_new[y==1] = W[y==1] * ( signal_luminosity / signal_weight_sum )
+    return W_new
 # ==================================================================================
 #  V4 Class and physic computations
 # ==================================================================================
