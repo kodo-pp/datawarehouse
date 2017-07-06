@@ -114,9 +114,14 @@ def load_ztautau(nrows=None, restricted_cols=True):
     return data
 
 
-def load_higgstautau():
-    data_h = load_htautau()
-    data_z = load_ztautau()
+def load_higgstautau(n_samples=None):
+    if n_samples is None:
+        data_h = load_htautau()
+        data_z = load_ztautau()
+    else:
+        data_h = load_htautau(nrows=n_samples//2)
+        data_z = load_ztautau(nrows=n_samples//2)
+
     data_h["Label"] = np.ones(data_h.shape[0])
     data_z["Label"] = np.zeros(data_z.shape[0])
     data_h["Weight"] = np.ones(data_h.shape[0])/200
