@@ -63,11 +63,10 @@ def load_higgs():
     data = pd.read_csv(filename)
     return data
 
-def normalize_weight(W, y):
+def normalize_weight(W, y, background_luminosity=410999.84732187376, signal_luminosity=691.9886077135781):
     """Normalize the given weight to assert that the luminosity is the same as the nominal.
-    Returns the normalized weight vector/Series"""
-    background_luminosity = 410999.84732187376
-    signal_luminosity = 691.9886077135781
+    Returns the normalized weight vector/Series
+    """
     background_weight_sum = W[y==0].sum()
     signal_weight_sum = W[y==1].sum()
     W_new = W.copy()
