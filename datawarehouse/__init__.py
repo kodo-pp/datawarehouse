@@ -6,6 +6,11 @@ from __future__ import absolute_import
 __version__ = "0.1"
 __author__ = "Victor Estrade"
 
+from . import download
+
+from .download import set_data_dir
+from .download import get_data_dir
+
 from .higgsml import load_higgs
 from .higgstautau import load_higgstautau
 from .higgstautau import load_htautau
