@@ -14,20 +14,20 @@ and manipulate it
  - systematics effect are simulated
      - bkg_weight_norm : manipulates the background weight
      - tau_energy_scale : manipulates PRI_tau_pt and recompute other quantities accordingly
-             Some WARNING : variable DER_mass_MMC is not properly manipulated (modification is linearised), 
+             Some WARNING : variable DER_mass_MMC is not properly manipulated (modification is linearised),
              and I advocate to NOT use DER_mass_MMC when doSystTauEnergyScale is enabled
-             There is a threshold in the original HiggsML file at 20GeV on PRI_tau_energy. 
-             This threshold is moved when changing sysTauEnergyScale which is unphysicsal. 
-             So if you're going to play with sysTauEnergyScale (within 0.9-1.1), 
+             There is a threshold in the original HiggsML file at 20GeV on PRI_tau_energy.
+             This threshold is moved when changing sysTauEnergyScale which is unphysicsal.
+             So if you're going to play with sysTauEnergyScale (within 0.9-1.1),
              I suggest you remove events below say 22 GeV *after* the manipulation
-             applying doSystTauEnergyScale with sysTauENergyScale=1. does NOT yield identical results as not applyield 
+             applying doSystTauEnergyScale with sysTauENergyScale=1. does NOT yield identical results as not applyield
              doSystTauEnergyScale, this is because of rounding error and zero mass approximation.
              doSysTauEnerbyScale impacts PRI_tau_pt as well as PRI_met and PRI_met_phi
     - so overall I suggest that when playing with doSystTauEnergyScale, the reference is
           - not using DER_mass_MMC
           - applying *after* this manipulation PRI_tau_pt>22
           - run with sysTauENergyScale=1. to have the reference
-          
+
 Author D. Rousseau LAL, Nov 2016
 
 Modification Dec 2016 (V. Estrade):
@@ -98,36 +98,36 @@ class V4:
 
     def copy(self):
         return copy.deepcopy(self)
-    
+
     def p2(self):
         return self.px**2 + self.py**2 + self.pz**2
-    
+
     def p(self):
         return np.sqrt(self.p2())
-    
+
     def pt2(self):
         return self.px**2 + self.py**2
-    
+
     def pt(self):
         return np.sqrt(self.pt2())
-    
+
     def m(self):
         return np.sqrt( np.abs( self.e**2 - self.p2() ) ) # abs is needed for protection
-    
+
     def eta(self):
         return np.arcsinh( self.pz/self.pt() )
-    
+
     def phi(self):
         return np.arctan2(self.py, self.px)
-    
+
     def deltaPhi(self, v):
         """delta phi with another v"""
         return (self.phi() - v.phi() + 3*np.pi) % (2*np.pi) - np.pi
-    
+
     def deltaEta(self,v):
         """delta eta with another v"""
         return self.eta()-v.eta()
-    
+
     def deltaR(self,v):
         """delta R with another v"""
         return np.sqrt(self.deltaPhi(v)**2+self.deltaEta(v)**2 )
@@ -146,29 +146,29 @@ class V4:
         self.py *= factor
         self.pz *= factor
         self.e = np.abs( factor*self.e )
-    
-    def scaleFixedM(self,factor=1.): 
+
+    def scaleFixedM(self,factor=1.):
         """Scale (keeping mass unchanged)"""
         m = self.m()
         self.px *= factor
         self.py *= factor
         self.pz *= factor
         self.e = self.eWithM(m)
-    
+
     def setPtEtaPhiM(self, pt=0., eta=0., phi=0., m=0):
         """Re-initialize with : pt, eta, phi and m"""
         self.px = pt*np.cos(phi)
         self.py = pt*np.sin(phi)
         self.pz = pt*np.sinh(eta)
         self.e = self.eWithM(m)
-    
+
     def sum(self, v):
         """Add another V4 into self"""
         self.px += v.px
         self.py += v.py
         self.pz += v.pz
         self.e += v.e
-    
+
     def __iadd__(self, other):
         """Add another V4 into self"""
         try:
@@ -176,11 +176,11 @@ class V4:
             self.py += other.py
             self.pz += other.pz
             self.e += other.e
-        except AttributeError: 
+        except AttributeError:
             # If 'other' is not V4 like object then return special NotImplemented error
             return NotImplemented
         return self
-    
+
     def __add__(self, other):
         """Add 2 V4 vectors : v3 = v1 + v2 = v1.__add__(v2)"""
         copy = self.copy()
@@ -189,7 +189,7 @@ class V4:
             copy.py += other.py
             copy.pz += other.pz
             copy.e += other.e
-        except AttributeError: 
+        except AttributeError:
             # If 'other' is not V4 like object then return special NotImplemented error
             return NotImplemented
         return copy
@@ -205,15 +205,15 @@ def METphi_centrality(aPhi, bPhi, cPhi):
     """
     # Safely compute and set to zeros results of zero divisions
     with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
-        
+
         A = np.true_divide(np.sin(cPhi - aPhi), np.sin(bPhi - aPhi))
         A[A == np.inf] = 0
         A = np.nan_to_num(A)
-        
+
         B = np.true_divide(np.sin(bPhi - cPhi), np.sin(bPhi - aPhi))
         B[B == np.inf] = 0
         B = np.nan_to_num(B)
-        
+
         res = (A+B)/np.sqrt(A**2 + B**2)
         res[res == np.inf] = 0
         res = np.nan_to_num(res)
@@ -228,13 +228,13 @@ def eta_centrality(eta, etaJ1, etaJ2):
     Returns value smaller than 1/e if object is not between
     """
     center = (etaJ1 + etaJ2) / 2.
-    
+
     # Safely compute and set to zeros results of zero divisions
     with np.errstate(divide='ignore', invalid='ignore'):
         width  = 1. / (etaJ1 - center)**2
         width[width == np.inf] = 0
         width = np.nan_to_num(width)
-        
+
     return np.exp(-width * (eta - center)**2)
 
 
@@ -264,9 +264,9 @@ def label_to_float(data):
 # ==================================================================================
 def getDetailLabel(origWeight, Label, num=True):
     """
-    Given original weight and label, 
+    Given original weight and label,
     return more precise label specifying the original simulation type.
-    
+
     Args
     ----
         origWeight: the original weight of the event
@@ -302,7 +302,7 @@ def getDetailLabel(origWeight, Label, num=True):
         2268701:300 #T
         }
     # complementary for W detaillabeldict=200
-    #previous alphanumeric detail label    
+    #previous alphanumeric detail label
     detail_lable_str={
        57207:"S0",
        4613:"S1",
@@ -385,7 +385,7 @@ def tau_energy_scale(data, systTauEnergyScale, missing_value=-999.0):
         data: the dataset should be a pandas.DataFrame like object.
             This function will modify the given data inplace.
         systTauEnergyScale : the factor applied : PRI_tau_pt <-- PRI_tau_pt * systTauEnergyScale
-        missing_value : (default=-999.0) the value used to code missing value. 
+        missing_value : (default=-999.0) the value used to code missing value.
             This is not used to find missing values but to write them in feature column that have some.
 
     Notes :
@@ -416,7 +416,7 @@ def tau_energy_scale(data, systTauEnergyScale, missing_value=-999.0):
     data["ORIG_sum_pt"] = data["DER_sum_pt"]
 
     # scale tau energy scale, arbitrary but reasonable value
-    data["PRI_tau_pt"] *= systTauEnergyScale 
+    data["PRI_tau_pt"] *= systTauEnergyScale
 
     # now recompute the DER quantities which are affected
 
@@ -532,7 +532,7 @@ def tau_energy_scale(data, systTauEnergyScale, missing_value=-999.0):
 
 
 # ==================================================================================
-#  NEW FEATURES : 
+#  NEW FEATURES :
 # ==================================================================================
 
 def add_radian_1(data, inplace=True):
@@ -619,7 +619,7 @@ def parse_args():
     ------
         args: the parsed arguments.
     """
-    
+
     # First create a parser with a short description of the program.
     # The parser will automatically handle the usual stuff like the --help messages.
     parser = argparse.ArgumentParser(
@@ -633,7 +633,7 @@ def parse_args():
     # ====================================================================================
 
     parser.add_argument("--quiet", "-q", help="Verbosity level", action="store_true", dest='quiet')
-    parser.add_argument("-r", "--restricted", 
+    parser.add_argument("-r", "--restricted",
         help="Option flag to write only the needed columns instead of keeping all the information."
         "Same behavior as previous version.",
         action="store_true", dest='restricted')
@@ -652,7 +652,7 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    
+
     quiet = args.quiet # quiet flag
     restricted = args.restricted # restricted flag
     float_label = args.float_label # label to float flag
