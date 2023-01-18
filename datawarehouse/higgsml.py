@@ -56,10 +56,7 @@ import numpy as np
 from .download import maybe_download
 from .download import get_data_dir
 
-def load_higgs():
-    url = "http://opendata.cern.ch/record/328/files/atlas-higgs-challenge-2014-v2.csv.gz"
-    filename = os.path.join(get_data_dir(), "atlas-higgs-challenge-2014-v2.csv.gz")
-    maybe_download(filename, url)
+def load_higgs(filename):
     data = pd.read_csv(filename)
     return data
 
